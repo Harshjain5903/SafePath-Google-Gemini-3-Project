@@ -29,6 +29,11 @@ class RoutingEngine:
                 ox.save_graphml(self.G, cache_path)
                 print(f"Graph cached to {cache_path}")
 
+        # Snap origins/destinations only to the largest strongly connected component,
+        # so one-way dead ends (e.g. near Navy Pier) can't cause "No path" errors
+        largest_scc = max(nx.strongly_connected_components(self.G), key=len)
+        self.G_snap = self.G.subgraph(largest_scc)
+
         # Store bounds for validation
         nodes = self.G.nodes(data=True)
         lats = [d['y'] for _, d in nodes]
@@ -159,8 +164,8 @@ class RoutingEngine:
         beta: Risk sensitivity (0 = fastest, 1.0+ = much safer)
         travel_mode: 'walking', 'driving', or 'cycling'
         """
-        orig_node = ox.nearest_nodes(self.G, start_coords[1], start_coords[0])
-        dest_node = ox.nearest_nodes(self.G, end_coords[1], end_coords[0])
+        orig_node = ox.nearest_nodes(self.G_snap, start_coords[1], start_coords[0])
+        dest_node = ox.nearest_nodes(self.G_snap, end_coords[1], end_coords[0])
 
         time_key = self._get_time_key(hour, is_weekend)
 
