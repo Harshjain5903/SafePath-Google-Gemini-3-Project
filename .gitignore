@@ -3,6 +3,7 @@
 *.env
 
 # Python
+.venv/
 __pycache__/
 *.pyc
 *.pyo
@@ -16,6 +17,12 @@ risk_aware_routing/cache/
 # output_chicago/ is ~14MB and MUST be in the repo for deployment
 output/
 
+# Street network graph — downloaded at build time by build.sh (~48MB)
+output_chicago/chicago_graph.graphml
+
 # Node
 node_modules/
 dist/
+
+# macOS
+.DS_Store
