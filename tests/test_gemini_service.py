@@ -30,6 +30,8 @@ def make_service(outcomes):
     svc = GeminiService.__new__(GeminiService)
     svc.client = type("FakeClient", (), {})()
     svc.client.models = FakeModels(outcomes)
+    svc.model = "test-model"
+    svc.conversation_history = []
     return svc
 
 
@@ -61,3 +63,16 @@ def test_quota_error_not_retried():
     with pytest.raises(errors.ClientError):
         svc._generate(model="m", contents="hi")
     assert svc.client.models.calls == 1
+
+
+def test_chat_reports_quota_limit():
+    svc = make_service([api_error(errors.ClientError, 429, "RESOURCE_EXHAUSTED")])
+    reply = svc._chat_with_context("hi")
+    assert "usage limit" in reply
+    assert "Manual tab" in reply
+
+
+def test_chat_reports_connection_trouble_on_server_error():
+    err = api_error(errors.ServerError, 503, "UNAVAILABLE")
+    svc = make_service([err, err, err])
+    assert "trouble connecting" in svc._chat_with_context("hi")

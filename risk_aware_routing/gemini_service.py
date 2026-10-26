@@ -124,6 +124,12 @@ class GeminiService:
                 # Store for later commit via commit_pending_exchange()
                 self._pending_exchange = (augmented, reply)
             return reply
+        except errors.APIError as e:
+            print(f"Buddy chat error: {e}")
+            if e.code == 429:
+                return ("I've hit my AI usage limit for now, so I can't chat. "
+                        "You can still plan a route in the Manual tab, or try me again in a bit.")
+            return "Hey sorry, I'm having trouble connecting right now. Can you try that again in a few seconds?"
         except Exception as e:
             print(f"Buddy chat error: {e}")
             return "Hey sorry, my brain glitched for a sec. What were you saying?"
