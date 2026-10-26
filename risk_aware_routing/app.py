@@ -2,6 +2,7 @@ from flask import Flask, Blueprint, request, jsonify, Response, send_from_direct
 from routing_engine import RoutingEngine
 from gemini_service import GeminiService
 from weather_service import WeatherService
+from geocoding import geocode_place
 from flask_cors import CORS
 from dotenv import load_dotenv
 import json
@@ -9,8 +10,6 @@ import copy
 import os
 import sys
 import base64
-import uuid
-import requests as http_requests
 from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
@@ -54,50 +53,6 @@ MY_LOCATION_PHRASES = {
     'my location', 'my current location', 'current location',
     'here', 'where i am', 'my position', 'my place',
 }
-
-# Mapbox geocoding (replaces slow osmnx — ~200ms vs 3-5s)
-MAPBOX_TOKEN = os.environ.get('MAPBOX_TOKEN', '')
-_geocode_cache = {}
-
-def geocode_place(place_name, user_coords=None):
-    """Convert a place name to [lat, lng] using Mapbox Geocoding API."""
-    normalized = place_name.strip().lower()
-    if normalized in _geocode_cache:
-        return _geocode_cache[normalized]
-    # Search Box API — legacy geocoding v5 no longer returns POIs (e.g. "Navy Pier").
-    # suggest+retrieve matches landmarks best; forward is the fallback (handles e.g. "the Loop").
-    base = "https://api.mapbox.com/search/searchbox/v1"
-    # Use user's location for proximity bias (avoids defaulting to the Loop)
-    if user_coords and len(user_coords) == 2:
-        proximity = f'{user_coords[1]},{user_coords[0]}'
-    else:
-        proximity = '-87.6298,41.8781'
-    params = {
-        'access_token': MAPBOX_TOKEN,
-        'proximity': proximity,
-        'bbox': '-87.94,41.644,-87.524,42.023',
-        'limit': 1,
-    }
-    session = str(uuid.uuid4())
-    resp = http_requests.get(f"{base}/suggest", params={**params, 'q': place_name, 'session_token': session}, timeout=5)
-    resp.raise_for_status()
-    suggestions = resp.json().get('suggestions', [])
-    features = []
-    if suggestions:
-        resp = http_requests.get(f"{base}/retrieve/{suggestions[0]['mapbox_id']}",
-                                 params={'access_token': MAPBOX_TOKEN, 'session_token': session}, timeout=5)
-        resp.raise_for_status()
-        features = resp.json().get('features', [])
-    if not features:
-        resp = http_requests.get(f"{base}/forward", params={**params, 'q': f"{place_name}, Chicago, Illinois"}, timeout=5)
-        resp.raise_for_status()
-        features = resp.json().get('features', [])
-    if not features:
-        raise ValueError(f"Could not find: {place_name}")
-    lng, lat = features[0]['geometry']['coordinates']
-    coords = [lat, lng]
-    _geocode_cache[normalized] = coords
-    return coords
 
 def get_time_label(h):
     if h == 0: return "12 AM"
