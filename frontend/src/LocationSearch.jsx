@@ -4,6 +4,8 @@ import './LocationSearch.css';
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 // Chicago center for proximity bias
 const PROXIMITY = '-87.6298,41.8781';
+// Search Box API groups suggest + retrieve calls into a billing session
+const SESSION_TOKEN = crypto.randomUUID();
 
 export default function LocationSearch({ placeholder, value, onSelect, onClear, onFocus }) {
   const [query, setQuery] = useState('');
@@ -44,11 +46,17 @@ export default function LocationSearch({ placeholder, value, onSelect, onClear, 
     }
     setLoading(true);
     fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(text)}.json?access_token=${MAPBOX_TOKEN}&proximity=${PROXIMITY}&limit=5&country=us&types=address,poi,neighborhood,place`
+      // Search Box API — legacy geocoding v5 no longer returns POIs (e.g. "Navy Pier")
+      `https://api.mapbox.com/search/searchbox/v1/suggest?q=${encodeURIComponent(text)}&access_token=${MAPBOX_TOKEN}&session_token=${SESSION_TOKEN}&proximity=${PROXIMITY}&limit=5&country=us&types=address,poi,neighborhood,place`
     )
       .then(r => r.json())
       .then(data => {
-        setResults(data.features || []);
+        // Normalize to the v5 feature shape used below (coords fetched on select)
+        setResults((data.suggestions || []).map(s => ({
+          id: s.mapbox_id,
+          text: s.name,
+          place_name: s.full_address || `${s.name}, ${s.place_formatted || ''}`.replace(/, $/, ''),
+        })));
         setShowDropdown(true);
         setLoading(false);
       })
@@ -65,11 +73,16 @@ export default function LocationSearch({ placeholder, value, onSelect, onClear, 
   };
 
   const handleSelect = (feature) => {
-    const [lng, lat] = feature.center;
     setQuery(feature.place_name.replace(/, United States$/, ''));
     setResults([]);
     setShowDropdown(false);
-    onSelect([lat, lng]);
+    fetch(`https://api.mapbox.com/search/searchbox/v1/retrieve/${feature.id}?access_token=${MAPBOX_TOKEN}&session_token=${SESSION_TOKEN}`)
+      .then(r => r.json())
+      .then(data => {
+        const coords = data.features?.[0]?.geometry?.coordinates;
+        if (coords) onSelect([coords[1], coords[0]]);
+      })
+      .catch(() => {});
   };
 
   const handleClear = () => {
