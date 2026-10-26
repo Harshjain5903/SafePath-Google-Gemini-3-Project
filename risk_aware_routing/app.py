@@ -7,12 +7,16 @@ from dotenv import load_dotenv
 import json
 import copy
 import os
+import sys
 import base64
 import uuid
 import requests as http_requests
 from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
+
+# Line-buffer logs so errors show up immediately under gunicorn / redirected output
+sys.stdout.reconfigure(line_buffering=True)
 
 app = Flask(__name__)
 CORS(app)
