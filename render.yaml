@@ -5,7 +5,7 @@ services:
     plan: free
     buildCommand: chmod +x build.sh && ./build.sh
     startCommand: cd risk_aware_routing && gunicorn app:app --bind 0.0.0.0:$PORT --timeout 300 --workers 1 --preload
-    healthCheckPath: /api/weather
+    healthCheckPath: /api/health
     envVars:
       - key: GEMINI_API_KEY
         sync: false

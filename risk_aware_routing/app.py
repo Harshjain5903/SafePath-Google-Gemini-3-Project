@@ -139,6 +139,16 @@ def compare_routes():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
 
+@api.route('/health', methods=['GET'])
+def health():
+    """Lightweight liveness check (no external calls) for the load balancer."""
+    return jsonify({
+        "status": "ok",
+        "graph_nodes": engine.G.number_of_nodes(),
+        "risk_cells": len(engine.risk_data),
+        "gemini": gemini_svc is not None,
+    })
+
 @api.route('/weather', methods=['GET'])
 def get_weather():
     """Returns current weather conditions and hourly forecast."""
