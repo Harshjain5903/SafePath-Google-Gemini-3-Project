@@ -101,7 +101,7 @@ const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Default speeds (m/s) per travel mode for time-based turn alerts
 const MODE_SPEEDS = { walking: 1.4, cycling: 4.5, driving: 8.0 };
 
-export default function ChatPanel({ onRouteReceived, onStartNavigation, navContext, userCoords, weather }) {
+export default function ChatPanel({ onRouteReceived, onStartNavigation, navContext, userCoords }) {
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -415,18 +415,6 @@ export default function ChatPanel({ onRouteReceived, onStartNavigation, navConte
       }
     });
   }, []);
-
-  // --- Turn alert phrases (lots of variety so it never sounds robotic) ---
-  const turnAlertPhrases = [
-    (label, dist) => `Oh sorry to interrupt, but there's a ${label} coming up in like ${dist} meters.`,
-    (label, dist) => `Hey, quick thing, you've got a ${label} in about ${dist} meters.`,
-    (label, dist) => `Oh wait, ${label} coming up, about ${dist} meters ahead.`,
-    (label, dist) => `So, heads up, ${label} in like ${dist} meters, okay?`,
-    (label, dist) => `Just wanted to let you know, there's a ${label} about ${dist} meters from here.`,
-    (label, dist) => `Real quick, ${label} ahead, maybe ${dist} meters or so.`,
-    (label, dist) => `By the way, you're gonna want to ${label} in about ${dist} meters.`,
-    (label, dist) => `Oh and, ${label} coming up pretty soon, like ${dist} meters.`,
-  ];
 
   // --- Drain any pending turn alert ---
   // Supports { text, urgent } objects: urgent alerts use instant browser TTS

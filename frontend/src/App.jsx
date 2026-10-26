@@ -47,7 +47,6 @@ export default function App() {
   const [userCoords, setUserCoords] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [sheetPosition, setSheetPosition] = useState('peek');
-  const [mapLoaded, setMapLoaded] = useState(false);
   const mapRef = useRef(null);
 
   // Mobile detection
@@ -604,7 +603,6 @@ export default function App() {
           ref={mapRef}
           {...viewState}
           onMove={evt => setViewState(evt.viewState)}
-          onLoad={() => setMapLoaded(true)}
           mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
           mapStyle="mapbox://styles/mapbox/dark-v11"
           onClick={handleMapClick}

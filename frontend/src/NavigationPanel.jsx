@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getBearing, getDistance, getTurnDirection, generateInstructions, interpolate } from './navUtils';
+import { getDistance, generateInstructions, interpolate } from './navUtils';
 import './NavigationPanel.css';
 
 export default function NavigationPanel({ route, totalTime, onPositionUpdate, onNavStateUpdate, onClose, autoStart }) {
