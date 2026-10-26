@@ -1,9 +1,10 @@
 from google import genai
-from google.genai import types
+from google.genai import types, errors
 import json
 import os
 import struct
 import io
+import time
 from datetime import datetime
 
 
@@ -74,6 +75,19 @@ class GeminiService:
         # Shared conversation memory across ALL interactions
         self.conversation_history = []
 
+    def _generate(self, retries=2, **kwargs):
+        """generate_content with backoff for transient server errors (500/503 "high demand").
+        Quota errors (429) are raised immediately — retrying won't help within a request."""
+        for attempt in range(retries + 1):
+            try:
+                return self.client.models.generate_content(**kwargs)
+            except errors.ServerError as e:
+                if attempt == retries:
+                    raise
+                delay = 2 ** attempt
+                print(f"Gemini {e.code}, retrying in {delay}s...")
+                time.sleep(delay)
+
     def _add_to_history(self, role, text):
         """Track conversation so the buddy remembers everything."""
         self.conversation_history.append({
@@ -98,7 +112,7 @@ class GeminiService:
                      + [{"role": "user", "parts": [{"text": augmented}]}])
 
         try:
-            response = self.client.models.generate_content(
+            response = self._generate(
                 model=self.model,
                 contents=contents,
             )
@@ -159,7 +173,7 @@ Rules:
 MESSAGE: {user_message}"""
 
         try:
-            response = self.client.models.generate_content(
+            response = self._generate(
                 model=self.model,
                 contents=prompt,
             )
@@ -326,7 +340,7 @@ Use these exact **bold headers**, keep each section to 1-2 sentences, under 150 
 Tone: confident local friend, not formal."""
 
         try:
-            response = self.client.models.generate_content(
+            response = self._generate(
                 model=self.model,
                 contents=prompt,
             )
@@ -365,7 +379,7 @@ Tone: confident local friend, not formal."""
         """Convert text to natural speech using Gemini's audio generation."""
         voice = voice or self.tts_voice
         try:
-            response = self.client.models.generate_content(
+            response = self._generate(
                 model=self.tts_model,
                 contents=text,
                 config=types.GenerateContentConfig(
