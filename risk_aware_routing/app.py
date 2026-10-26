@@ -425,4 +425,7 @@ if os.path.exists(FRONTEND_DIR):
         return send_from_directory(FRONTEND_DIR, 'index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    # Local dev server. Production runs under gunicorn (see render.yaml).
+    port = int(os.environ.get('PORT', 5001))
+    debug = os.environ.get('FLASK_DEBUG', '0') == '1'
+    app.run(debug=debug, port=port)
