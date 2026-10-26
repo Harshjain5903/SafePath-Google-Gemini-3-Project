@@ -23,14 +23,15 @@ CORS(app)
 api = Blueprint('api', __name__)
 
 # Init Engine (Chicago) — uses cached graph for fast startup
-GRAPH_CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'output_chicago', 'chicago_graph.graphml')
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'output_chicago')
+GRAPH_CACHE = os.path.join(DATA_DIR, 'chicago_graph.graphml')
 engine = RoutingEngine("Chicago, Illinois, USA", cache_path=GRAPH_CACHE)
-engine.load_risk_api("../output_chicago/routing_risk_api.json")
+engine.load_risk_api(os.path.join(DATA_DIR, 'routing_risk_api.json'))
 
 # Load static data for dynamic heatmap
-with open("../output_chicago/grid_risk.geojson", 'r') as f:
+with open(os.path.join(DATA_DIR, 'grid_risk.geojson'), 'r') as f:
     base_heatmap = json.load(f)
-with open("../output_chicago/time_patterns.json", 'r') as f:
+with open(os.path.join(DATA_DIR, 'time_patterns.json'), 'r') as f:
     time_patterns = json.load(f)
 
 # Create hourly multiplier lookup
