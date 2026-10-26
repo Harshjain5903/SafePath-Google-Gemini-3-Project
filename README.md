@@ -219,24 +219,34 @@ Two routes come back: fastest path and safest path. You see both on the map, pic
 
 ## Run it locally
 
+Requires Python 3.11 and Node 20+. You'll need a [Gemini API key](https://aistudio.google.com/apikey) and a [Mapbox public token](https://account.mapbox.com/access-tokens/).
+
 **Backend**
 ```bash
-cd risk_aware_routing
-pip install -r requirements.txt
-# Add your keys to .env:
-#   GEMINI_API_KEY=your_key
-#   MAPBOX_TOKEN=your_token
-python app.py
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r risk_aware_routing/requirements.txt
+
+cp risk_aware_routing/.env.example risk_aware_routing/.env   # add GEMINI_API_KEY + MAPBOX_TOKEN
+FLASK_DEBUG=1 python risk_aware_routing/app.py               # http://127.0.0.1:5001
 ```
+The first start downloads the Chicago street network from OpenStreetMap (a few minutes) and caches it to `output_chicago/chicago_graph.graphml`. Later starts load it in seconds. Check `GET /api/health` to confirm the server is up.
 
 **Frontend**
 ```bash
 cd frontend
 npm install
-# Add to .env:
-#   VITE_MAPBOX_TOKEN=your_token
-npm run dev
+cp .env.example .env   # add VITE_MAPBOX_TOKEN
+npm run dev            # http://localhost:5173, proxies /api to :5001
 ```
+
+**Tests**
+```bash
+python -m pytest tests     # backend
+cd frontend && npm test    # frontend
+```
+
+> The Gemini free tier allows ~5 requests/minute and 20/day; each AI route request uses 3–4. If the AI chat reports a usage limit, the **Manual** tab still plans routes without Gemini.
 
 Open `http://localhost:5173` and try:
 - *"Drive from O'Hare to Millennium Park during rush hour"*
