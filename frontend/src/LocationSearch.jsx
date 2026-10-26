@@ -7,8 +7,11 @@ const PROXIMITY = '-87.6298,41.8781';
 // Search Box API groups suggest + retrieve calls into a billing session
 const SESSION_TOKEN = crypto.randomUUID();
 
+const formatCoords = (value) => (value ? `${value[0].toFixed(4)}, ${value[1].toFixed(4)}` : '');
+
 export default function LocationSearch({ placeholder, value, onSelect, onClear, onFocus }) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(() => formatCoords(value));
+  const [prevValue, setPrevValue] = useState(value);
   const [results, setResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,14 +19,12 @@ export default function LocationSearch({ placeholder, value, onSelect, onClear, 
   const dropdownRef = useRef(null);
   const debounceRef = useRef(null);
 
-  // Sync display value when coords set externally (e.g. map tap or GPS)
-  useEffect(() => {
-    if (value) {
-      setQuery(`${value[0].toFixed(4)}, ${value[1].toFixed(4)}`);
-    } else {
-      setQuery('');
-    }
-  }, [value]);
+  // Sync display value when coords set externally (e.g. map tap or GPS).
+  // Done during render rather than in an effect to avoid an extra render pass.
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setQuery(formatCoords(value));
+  }
 
   // Reverse geocode when coords set externally to show place name
   useEffect(() => {
